@@ -36,10 +36,19 @@ ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue")
 CONFIG_FILE = os.path.join(os.path.expanduser("~"), "PlatinumConfig.json")
 
-# --- DSA: THREAD-SAFE QUEUE REDIRECTOR ---
+# --- DSA: THREAD-SAFE QUEUE REDIRECTOR (WITH DOWNLOAD INTERCEPTOR) ---
 class QueueRedirector:
     def __init__(self, q): self.q = q
-    def write(self, text): self.q.put({"type": "log", "msg": text})
+    def write(self, text):
+        # Menangkap sinyal tersembunyi saat Whisper mengunduh model
+        if "\r" in text and "%" in text:
+            try:
+                # Mengekstrak angka persentase lalu menggerakkan Progress Bar GUI
+                pct = float(text.split("%")[0].split()[-1]) / 100.0
+                self.q.put({"type": "progress", "val": pct})
+            except: pass
+        else:
+            self.q.put({"type": "log", "msg": text})
     def flush(self): pass
 
 class PlatinumTranscriberApp(ctk.CTk):
