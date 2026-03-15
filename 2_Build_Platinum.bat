@@ -20,17 +20,16 @@ echo [2/5] Activating venv and downloading required libraries ONLY...
 call platinum_env\Scripts\activate
 python -m pip install --upgrade pip
 python -m pip install --upgrade yt-dlp openai-whisper pyinstaller deep-translator deepl python-docx reportlab psutil assemblyai customtkinter
-echo [3/5] Locking to current working directory...
+echo [3/5] Locking to current directory...
 cd /d "%~dp0"
 echo [4/5] Compiling to .EXE safely...
 pyinstaller --noconsole --onefile --icon=logo.ico PlatinumTranscriber.py
 echo [5/5] Cleaning up and opening 'dist' folder...
 call deactivate
 if exist dist (
-    cd dist
-    start PlatinumTranscriber.exe
+    explorer dist
 ) else (
-    echo Build failed. Check the error logs above.
+    echo Build failed. Check the logs above.
     pause
 )
 exit
@@ -42,17 +41,16 @@ echo [2/5] Mengaktifkan ruang isolasi dan mengunduh pustaka murni...
 call platinum_env\Scripts\activate
 python -m pip install --upgrade pip
 python -m pip install --upgrade yt-dlp openai-whisper pyinstaller deep-translator deepl python-docx reportlab psutil assemblyai customtkinter
-echo [3/5] Mengunci direktori kerja agar tidak meleset...
+echo [3/5] Mengunci direktori kerja...
 cd /d "%~dp0"
 echo [4/5] Mengkompilasi menjadi .EXE secara aman...
 pyinstaller --noconsole --onefile --icon=logo.ico PlatinumTranscriber.py
 echo [5/5] Membersihkan sistem dan membuka folder 'dist'...
 call deactivate
 if exist dist (
-    cd dist
-    start PlatinumTranscriber.exe
+    explorer dist
 ) else (
-    echo Gagal membuat aplikasi. Silakan cek pesan error di atas.
+    echo Gagal membuat aplikasi. Silakan cek log di atas.
     pause
 )
 exit
