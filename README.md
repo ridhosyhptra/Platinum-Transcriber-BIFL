@@ -1,43 +1,37 @@
-# 🏆 Platinum Standard AI Transcriber (Ultimate Masterplan)
+# 🏆 Platinum Standard AI Transcriber (Greatest Ultimate Edition)
 
 *(Scroll down for Indonesian / Gulir ke bawah untuk Bahasa Indonesia)*
 
 ## 🇬🇧 ENGLISH VERSION: THE ULTIMATE LOCAL TRANSCRIPTION
-Enterprise-grade software combining 100% Offline capability (Whisper AI) with Cloud AI options (DeepL & AssemblyAI).
+Enterprise-grade software combining Data Structure Optimized 100% Offline capability (Whisper AI) with Cloud AI options (DeepL & AssemblyAI). Designed for the "Buy It For Life" philosophy.
 
 ### 💻 OS PRE-FLIGHT CHECK & INSTALLATION
-Before running, ensure your OS is ready:
-* **Windows:** Use the provided `.bat` scripts to install Python 3.12 and FFmpeg automatically.
-* **macOS:** Open Terminal. Install Homebrew if needed: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`. Then run: `brew install python ffmpeg`.
-* **Linux (Ubuntu/Debian):** Open Terminal. Run: `sudo apt update && sudo apt install python3 python3-pip ffmpeg`.
+Before compiling, ensure your operating system is ready:
+* **Windows:** Use the provided `.bat` scripts to set up sterile virtual environments automatically.
+* **macOS:** Open Terminal. Install Homebrew: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`. Then run: `brew install python ffmpeg`.
+* **Linux (Ubuntu/Debian):** Open Terminal. Run: `sudo apt update && sudo apt install python3 python3-pip python3-venv ffmpeg`.
 
-### 🚀 UNIVERSAL BUILD COMMAND
-Run this in your terminal to install all engines:
-`python -m pip install --upgrade yt-dlp openai-whisper pyinstaller deep-translator deepl python-docx reportlab psutil assemblyai customtkinter`
-
-To compile into a standalone app with a logo (Ensure `logo.ico` is in the same folder):
-`pyinstaller --noconsole --onefile --icon=logo.ico PlatinumTranscriber.py`
+### 🚀 UNIVERSAL BUILD COMMAND (For Mac/Linux)
+*(Windows users: Simply double-click `2_Build_Platinum.bat`)*
+1. `python3 -m venv platinum_env`
+2. `source platinum_env/bin/activate`
+3. `pip install --upgrade yt-dlp openai-whisper pyinstaller deep-translator deepl python-docx reportlab psutil assemblyai customtkinter`
+4. `pyinstaller --noconsole --onefile PlatinumTranscriber.py`
 
 ---
 
 ## 🇮🇩 VERSI BAHASA INDONESIA: MANUAL OPERASIONAL ENTERPRISE
-Alat Transkripsi Definitif. Kemampuan 100% Offline dipadukan dengan opsi Cloud AI.
 
-### 💻 PEMERIKSAAN OS & PERSIAPAN
-* **Windows:** Gunakan skrip `1_Setup_System.bat` untuk otomatisasi.
-* **macOS:** Buka Terminal, instal Homebrew, lalu: `brew install python ffmpeg`.
-* **Linux:** Buka Terminal, lalu: `sudo apt update && sudo apt install python3 python3-pip ffmpeg`.
+### 💻 PEMERIKSAAN OS & PERSIAPAN OTOMATIS
+* **Windows:** Klik ganda `1_Setup_System.bat` untuk memasukkan Python dan FFmpeg ke dalam laptop.
+* **Mac/Linux:** Ikuti instruksi terminal di versi bahasa Inggris di atas.
 
-### 🚀 INSTALASI & BUILD KOMPILASI
-Terminal Universal untuk mengunduh pustaka:
-`python -m pip install --upgrade yt-dlp openai-whisper pyinstaller deep-translator deepl python-docx reportlab psutil assemblyai customtkinter`
+### 🚀 INSTALASI & KOMPILASI (BUAT .EXE)
+Klik ganda skrip `2_Build_Platinum.bat`. Skrip ini akan membuat "Ruang Isolasi" (Virtual Environment) agar file `.exe` yang dihasilkan sangat padat, ramping, dan bebas dari *library* sampah. 
 
-Untuk membuat file `.exe` berlogo (Siapkan gambar bernama `logo.ico` di desktop):
-`pyinstaller --noconsole --onefile --icon=logo.ico PlatinumTranscriber.py`
-
-### 🧠 FITUR & FAQ
-* **Sumber Media:** YouTube Link (~30MB/jam) atau File Lokal BATCH (100% Offline).
-* **AI Engine (Whisper):** SMALL (~460MB, Cepat, Sisa RAM >2GB). MEDIUM (~1.5GB, Presisi Tinggi, Sisa RAM >5GB). *Peringatan ukuran akan muncul saat pertama kali diunduh.*
-* **Output:** `.srt`, `.vtt`, `.txt` (Format `[02:05]`), `.docx`, dan `.pdf`.
-* **Proteksi API (DeepL/AssemblyAI):** Jika Anda memilih fitur berbayar tapi API Key kosong atau limit habis, sistem akan otomatis melakukan *fallback* (alih daya) ke opsi gratis (Google Translate) agar aplikasi tidak *crash*.
-* **AssemblyAI Fitur Penuh:** Mendukung Auto-Chapters, Sensor PII (Data Pribadi), Diarization (Pendeteksi Pembicara), Custom Vocab, dan Filter Kata Pengisi (Filler words).
+### 🧠 FITUR & ARSITEKTUR TINGKAT TINGGI (FAQ)
+* **I/O Streaming Architecture:** Aplikasi ini tidak menumpuk teks di RAM. Ia langsung menulis ke Hardisk per kalimat (O(1) Memory Footprint). Laptop Anda akan tetap dingin meski memproses video 10 jam.
+* **Thread-Safe UI:** Antarmuka (Layar Monitor) dipisahkan dari otak AI menggunakan sistem Antrean (*Queue*), sehingga aplikasi 100% anti-freeze/Not Responding.
+* **Soft E-Stop:** Tombol darurat yang akan menghentikan sistem dengan aman tanpa merusak *file* yang sedang diproses.
+* **Proteksi API Otomatis:** Lupa memasukkan API Key DeepL/AssemblyAI? AI akan otomatis melakukan *fallback* (alih daya) ke Google Translate gratis atau mengabaikan instruksi *cloud* tanpa membuat aplikasi *crash*.
+* **Output Presisi Tinggi:** Menyediakan `.srt`, `.vtt`, `.txt` dengan format waktu absolut `[02:05]`, hingga *render* otomatis ke `.docx` dan `.pdf`.

@@ -25,7 +25,7 @@ exit
 :ID
 cls
 echo Menginstal Mesin Utama (Python & FFmpeg)...
-echo Anda menyetujui proses ini untuk memasukkan "Otak" dan "Telinga" ke sistem.
+echo Anda menyetujui proses ini untuk membangun fondasi AI.
 winget install Python.Python.3.12 --accept-package-agreements
 winget install Gyan.FFmpeg --accept-package-agreements
 echo INSTALASI SELESAI! KRITIKAL: Restart Laptop Anda sekarang.
