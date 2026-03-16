@@ -1,29 +1,47 @@
 import os
 import sys
+import time
 import threading
 import json
 import subprocess
 import urllib.request
 import shutil
 import queue
+import sqlite3
+import datetime
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
-# --- PRE-FLIGHT CHECK (LAPISAN PELINDUNG AWAL) ---
+# --- 1. INJEKSI FFMPEG PORTABLE (100% PLUG AND PLAY) ---
+def inject_ffmpeg():
+    if getattr(sys, 'frozen', False):
+        base_path = sys._MEIPASS # Path memori sementara saat jadi .exe
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    
+    ffmpeg_path = os.path.join(base_path, "ffmpeg.exe")
+    if os.path.exists(ffmpeg_path):
+        os.environ["PATH"] += os.pathsep + base_path
+        return True
+    return False
+
+HAS_FFMPEG = inject_ffmpeg()
+
+# --- 2. PRE-FLIGHT CHECK (Pengecekan Library) ---
 missing_libs = []
-for lib in ['yt_dlp', 'whisper', 'deep_translator', 'deepl', 'docx', 'reportlab', 'psutil', 'assemblyai', 'customtkinter']:
+for lib in ['yt_dlp', 'faster_whisper', 'deep_translator', 'deepl', 'docx', 'reportlab', 'psutil', 'assemblyai', 'customtkinter']:
     try: __import__(lib)
     except: missing_libs.append(lib)
 
 if missing_libs:
     tk.Tk().withdraw()
-    err_msg = "Library belum terinstal / Missing Libraries:\n" + "\n".join(missing_libs)
+    err_msg = "Library belum terinstal:\n" + "\n".join(missing_libs)
     err_msg += "\n\nJalankan skrip 2_Build_Platinum.bat untuk menginstal otomatis."
     messagebox.showerror("System Diagnostics Failed", err_msg)
     sys.exit()
 
 import yt_dlp
-import whisper
+from faster_whisper import WhisperModel
 from deep_translator import GoogleTranslator
 import deepl
 import docx
@@ -36,26 +54,37 @@ ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue")
 CONFIG_FILE = os.path.join(os.path.expanduser("~"), "PlatinumConfig.json")
 
-# --- DSA: THREAD-SAFE QUEUE REDIRECTOR (WITH DOWNLOAD INTERCEPTOR) ---
+# --- 3. DATABASE ANALITIK (SQLITE) ---
+def init_db():
+    conn = sqlite3.connect("PlatinumLogs.db")
+    conn.execute("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY, tanggal TEXT, file_name TEXT, durasi_detik REAL, engine TEXT)")
+    conn.commit()
+    conn.close()
+
+def save_log(file_name, durasi, engine):
+    try:
+        conn = sqlite3.connect("PlatinumLogs.db")
+        tgl = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn.execute("INSERT INTO logs (tanggal, file_name, durasi_detik, engine) VALUES (?, ?, ?, ?)", (tgl, file_name, durasi, engine))
+        conn.commit()
+        conn.close()
+    except Exception as e: print(f"[DB Error] Gagal menyimpan log: {e}")
+
+init_db()
+
+# --- 4. THREAD-SAFE QUEUE REDIRECTOR ---
 class QueueRedirector:
     def __init__(self, q): self.q = q
     def write(self, text):
-        # Menangkap sinyal tersembunyi saat Whisper mengunduh model
-        if "\r" in text and "%" in text:
-            try:
-                # Mengekstrak angka persentase lalu menggerakkan Progress Bar GUI
-                pct = float(text.split("%")[0].split()[-1]) / 100.0
-                self.q.put({"type": "progress", "val": pct})
-            except: pass
-        else:
-            self.q.put({"type": "log", "msg": text})
+        if text.strip(): self.q.put({"type": "log", "msg": text + "\n"})
     def flush(self): pass
 
+# --- 5. KELAS UTAMA APLIKASI ---
 class PlatinumTranscriberApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Platinum Transcriber (Greatest Ultimate Edition)")
-        self.geometry("950x780")
+        self.title("Platinum Transcriber V7 (Faster-Whisper Edition)")
+        self.geometry("950x800")
         self.stop_flag = False
         self.msg_queue = queue.Queue()
         
@@ -112,8 +141,14 @@ class PlatinumTranscriberApp(ctk.CTk):
     def setup_ui(self):
         self.current_lang = "id"
         main_frm = ctk.CTkFrame(self); main_frm.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        # TOP BAR (Language & History)
         top_bar = ctk.CTkFrame(main_frm, fg_color="transparent"); top_bar.pack(fill="x")
-        self.btn_lang = ctk.CTkButton(top_bar, text="🔄 English", command=self.toggle_lang, width=100); self.btn_lang.pack(side="right")
+        self.btn_lang = ctk.CTkButton(top_bar, text="🔄 English", command=self.toggle_lang, width=100)
+        self.btn_lang.pack(side="right", padx=5)
+        self.btn_hist = ctk.CTkButton(top_bar, text="📊 RIWAYAT", command=self.show_history, width=100, fg_color="gray")
+        self.btn_hist.pack(side="right", padx=5)
+        
         self.btn_diag = ctk.CTkButton(main_frm, text="🔍 DIAGNOSTIK SISTEM", fg_color="#ff9800", hover_color="#e68a00", command=self.run_diag)
         self.btn_diag.pack(fill="x", pady=5)
 
@@ -128,9 +163,9 @@ class PlatinumTranscriberApp(ctk.CTk):
         ctk.CTkButton(self.f_frm, text="Cari File", command=self.browse).pack(side="left")
         self.f_lbl = ctk.CTkLabel(self.f_frm, text="Belum ada file", text_color="gray"); self.f_lbl.pack(side="left", padx=10)
         
-        ctk.CTkLabel(self.t1, text="\nKapasitas Mesin AI (Periksa Spek Laptop):", font=("Arial", 14, "bold")).pack(anchor="w", pady=(10,0))
-        ctk.CTkRadioButton(self.t1, text="Whisper SMALL (~460MB | Cepat & Ringan | RAM > 2GB)", variable=self.ai_eng, value="small").pack(anchor="w", pady=5)
-        ctk.CTkRadioButton(self.t1, text="Whisper MEDIUM (~1.5GB | Presisi Tinggi | RAM > 5GB)", variable=self.ai_eng, value="medium").pack(anchor="w", pady=5)
+        ctk.CTkLabel(self.t1, text="\nKapasitas Mesin AI (Faster-Whisper):", font=("Arial", 14, "bold")).pack(anchor="w", pady=(10,0))
+        ctk.CTkRadioButton(self.t1, text="Whisper SMALL (Sangat Cepat | RAM > 1.5GB)", variable=self.ai_eng, value="small").pack(anchor="w", pady=5)
+        ctk.CTkRadioButton(self.t1, text="Whisper MEDIUM (Presisi Tinggi | RAM > 3.0GB)", variable=self.ai_eng, value="medium").pack(anchor="w", pady=5)
 
         # TAB 2: OUTPUT
         ctk.CTkLabel(self.t2, text="Format Output:", font=("Arial", 14, "bold")).pack(anchor="w")
@@ -168,11 +203,43 @@ class PlatinumTranscriberApp(ctk.CTk):
         self.btn_stop.pack(side="right", expand=True, fill="x", padx=(5,0))
         self.console_log = ctk.CTkTextbox(main_frm, height=140, text_color="#00FF00", fg_color="black", font=("Consolas", 12))
         self.console_log.pack(fill="both", expand=True, pady=5); self.console_log.configure(state="disabled")
+        
         self.toggle_src()
+        print("[SYSTEM] V7.0 Faster-Whisper Edition Siap.")
+        if HAS_FFMPEG: print("[SYSTEM] FFmpeg Portable Terdeteksi (Plug-and-Play Aktif).")
 
     def toggle_lang(self):
-        self.current_lang = "id" if self.current_lang == "en" else "en"
-        self.btn_lang.configure(text="🔄 English" if self.current_lang == "id" else "🔄 Indonesia")
+        self.current_lang = "en" if self.current_lang == "id" else "id"
+        is_en = self.current_lang == "en"
+        self.btn_lang.configure(text="🔄 Indonesia" if is_en else "🔄 English")
+        self.btn_hist.configure(text="📊 HISTORY" if is_en else "📊 RIWAYAT")
+        self.btn_diag.configure(text="🔍 SYSTEM DIAGNOSTICS" if is_en else "🔍 DIAGNOSTIK SISTEM")
+        self.btn_start.configure(text="▶ START EXECUTION" if is_en else "▶ MULAI EKSEKUSI")
+        self.btn_stop.configure(text="⏹ ABORT (E-STOP)" if is_en else "⏹ BATALKAN (E-STOP)")
+        self.url_ent.configure(placeholder_text="Paste YouTube link..." if is_en else "Tempel link YouTube...")
+        if "Belum ada" in self.f_lbl.cget("text") or "No file" in self.f_lbl.cget("text"):
+            self.f_lbl.configure(text="No file selected" if is_en else "Belum ada file")
+
+    def show_history(self):
+        hist_win = ctk.CTkToplevel(self)
+        hist_win.title("Dashboard Analitik" if self.current_lang=="id" else "Analytics Dashboard")
+        hist_win.geometry("600x400")
+        hist_win.attributes("-topmost", True)
+        
+        lbl = ctk.CTkLabel(hist_win, text="Riwayat Transkripsi (Log Database)", font=("Arial", 16, "bold"))
+        lbl.pack(pady=10)
+        textbox = ctk.CTkTextbox(hist_win, width=550, height=300)
+        textbox.pack(padx=10, pady=10)
+        
+        try:
+            conn = sqlite3.connect("PlatinumLogs.db")
+            cursor = conn.execute("SELECT tanggal, file_name, durasi_detik, engine FROM logs ORDER BY id DESC")
+            for row in cursor:
+                mins, secs = divmod(int(row[2]), 60)
+                textbox.insert("end", f"[{row[0]}] {row[1]}\nEngine: {row[3]} | Waktu Proses: {mins}m {secs}s\n{'-'*50}\n")
+            conn.close()
+        except: textbox.insert("end", "Belum ada riwayat / Database Error.")
+        textbox.configure(state="disabled")
 
     def toggle_src(self):
         if self.src_type.get() == "youtube": self.f_frm.pack_forget(); self.url_ent.pack(anchor="w", pady=5)
@@ -185,7 +252,7 @@ class PlatinumTranscriberApp(ctk.CTk):
     def run_diag(self):
         ram = psutil.virtual_memory(); fr = ram.available / (1024**3); tr = ram.total / (1024**3)
         fs = shutil.disk_usage(os.path.expanduser("~"))[2] / (1024**3)
-        ff = "✅" if subprocess.run(["ffmpeg", "-version"], capture_output=True).returncode == 0 else "❌"
+        ff = "✅ (Portable)" if HAS_FFMPEG else ("✅ (System)" if subprocess.run(["ffmpeg", "-version"], capture_output=True).returncode == 0 else "❌")
         try: urllib.request.urlopen('http://google.com', timeout=3); inet = "✅"
         except: inet = "❌"
         messagebox.showinfo("Pre-Flight Check", f"Internet Connection: {inet}\nFFmpeg Engine: {ff}\nRAM Free: {fr:.2f}GB / {tr:.2f}GB\nStorage Free: {fs:.2f}GB")
@@ -208,7 +275,6 @@ class PlatinumTranscriberApp(ctk.CTk):
             p = d.get('_percent_str', '0%').replace('%','')
             try: self.msg_queue.put({"type": "progress", "val": float(p)/100})
             except: pass
-            print(f"[YT] Downloading: {p}%", end='\n')
 
     def trigger_stop(self):
         self.stop_flag = True; print("\n[E-STOP] Menerima sinyal pembatalan. Menutup operasi dengan aman...")
@@ -219,7 +285,7 @@ class PlatinumTranscriberApp(ctk.CTk):
         threading.Thread(target=self.logic, daemon=True).start()
 
     def logic(self):
-        self.btn_start.configure(state="disabled"); self.btn_stop.configure(state="normal", text="⏹ BATALKAN")
+        self.btn_start.configure(state="disabled"); self.btn_stop.configure(state="normal", text="⏹ BATALKAN (E-STOP)")
         self.msg_queue.put({"type": "progress", "val": 0})
         self.msg_queue.put({"type": "prog_mode", "val": "determinate"})
         try:
@@ -254,13 +320,12 @@ class PlatinumTranscriberApp(ctk.CTk):
             # --- CABANG 1: ASSEMBLY AI CLOUD ---
             if self.use_aai.get():
                 aai_key = self.aai_key.get().strip()
-                if not aai_key: raise ValueError("Opsi AssemblyAI dicentang, tetapi API Key kosong. Harap isi atau matikan opsi tersebut.")
+                if not aai_key: raise ValueError("AssemblyAI API Key kosong.")
                 
                 print("[SISTEM] Menghubungkan ke AssemblyAI Cloud...")
                 aai.settings.api_key = aai_key
                 vocab = [w.strip() for w in self.aai_vocab.get().split(",")] if self.aai_vocab.get() else None
                 config = aai.TranscriptionConfig(auto_chapters=self.aai_chap.get(), entity_detection=self.aai_pii.get(), speaker_labels=self.aai_diar.get(), disfluencies=not self.aai_filler.get(), word_boost=vocab)
-                
                 transcriber = aai.Transcriber(config=config)
                 self.msg_queue.put({"type": "prog_mode", "val": "indeterminate"})
                 
@@ -268,26 +333,32 @@ class PlatinumTranscriberApp(ctk.CTk):
                     if self.stop_flag: break
                     print(f"[CLOUD] Memproses dokumen: {name}...")
                     try:
+                        t_start = time.time()
                         transcript = transcriber.transcribe(path)
                         if transcript.error: raise ValueError(transcript.error)
                         
                         open(os.path.join(desktop, f"{name}_AAI.txt"), "w", encoding="utf-8").write(transcript.text)
-                        
                         if self.aai_chap.get() and transcript.chapters:
                             with open(os.path.join(desktop, f"{name}_Chapters.txt"), "w", encoding="utf-8") as f_chap:
                                 for ch in transcript.chapters: f_chap.write(f"[{ch.start}-{ch.end}] {ch.headline}\n{ch.summary}\n\n")
+                        
+                        save_log(name, time.time() - t_start, "AssemblyAI Cloud")
                     except Exception as e: print(f"[AAI ERROR] Gagal memproses {name}: {e}")
                 self.msg_queue.put({"type": "prog_mode", "val": "determinate"})
 
-            # --- CABANG 2: WHISPER LOKAL (I/O STREAMING & DSA OPTIMIZED) ---
+            # --- CABANG 2: FASTER-WHISPER LOKAL (V7.0 UPGRADE) ---
             else:
                 m_type = self.ai_eng.get()
-                if ram_free < (4.5 if m_type == "medium" else 2.0): raise ValueError(f"RAM Anda ({ram_free:.2f}GB) terlalu kecil untuk menjalankan model {m_type}.")
-                print(f"[AI ENGINE] Memuat arsitektur saraf Whisper {m_type.upper()}...")
-                model = whisper.load_model(m_type)
+                if ram_free < 1.5: raise ValueError(f"RAM Anda terlalu kecil. Minimal 1.5GB Free RAM.")
+                print(f"[AI ENGINE] Memuat arsitektur saraf FASTER-WHISPER {m_type.upper()}...")
+                self.msg_queue.put({"type": "prog_mode", "val": "indeterminate"})
+                
+                # Inisiasi CTranslate2 Engine berbasis CPU (Agar ringan dan jalan di semua laptop)
+                model = WhisperModel(m_type, device="cpu", compute_type="int8")
                 
                 for path, name in files_to_do:
                     if self.stop_flag: break
+                    t_start = time.time()
                     proc_path = path
                     if self.clean_audio.get():
                         clean_path = f"clean_{os.path.basename(path)}.wav"
@@ -295,53 +366,54 @@ class PlatinumTranscriberApp(ctk.CTk):
                         proc_path = clean_path
 
                     print(f"\n[AI] Menganalisis gelombang suara: {name}")
-                    self.msg_queue.put({"type": "prog_mode", "val": "indeterminate"})
-                    res = model.transcribe(proc_path, verbose=False)
                     self.msg_queue.put({"type": "prog_mode", "val": "determinate"})
                     
-                    segments = res["segments"]
-                    total_segs = len(segments)
+                    # Faster-Whisper menghasilkan generator 'segments' dan 'info'
+                    segments, info = model.transcribe(proc_path, beam_size=5)
+                    audio_duration = info.duration
                     
                     bp = os.path.join(desktop, name)
-                    doc_lines = [] # O(1) Data Structure
+                    doc_lines = []
                     
-                    # I/O Streaming: Buka saluran langsung ke Hardisk
-                    print(f"[I/O STREAM] Membuka jalur penulisan aman ke Hardisk...")
+                    print(f"[I/O STREAM] Membuka jalur penulisan seketika ke Hardisk...")
                     f_srt = open(f"{bp}.srt", "w", encoding="utf-8") if self.out_srt.get() else None
                     f_vtt = open(f"{bp}.vtt", "w", encoding="utf-8") if self.out_vtt.get() else None
                     f_txt = open(f"{bp}.txt", "w", encoding="utf-8") if self.out_txt.get() else None
                     if f_vtt: f_vtt.write("WEBVTT\n\n")
 
+                    # I/O STREAMING & PROGRESS TRACKING
                     for i, seg in enumerate(segments, start=1):
                         if self.stop_flag: break
-                        self.msg_queue.put({"type": "progress", "val": i / total_segs})
-                        s, e, text = seg["start"], seg["end"], seg["text"].strip()
+                        
+                        # Update Progress Bar secara presisi berdasarkan durasi segmen audio
+                        if audio_duration > 0:
+                            self.msg_queue.put({"type": "progress", "val": seg.end / audio_duration})
+                        
+                        s, e, text = seg.start, seg.end, seg.text.strip()
 
-                        # Eksekusi Terjemahan Per Kalimat
                         try:
                             if engine == "google": text = google_tr.translate(text)
                             elif engine == "deepl": text = deepl_tr.translate_text(text, target_lang="ID").text
                             elif engine == "any2en": text = any_tr.translate(text)
                         except: text = f"[Translate Error] {text}"
 
-                        # Stream Langsung ke Hardisk (Memori RAM Tetap Kosong)
                         if f_srt: f_srt.write(f"{i}\n{self.format_ts(s, 'srt')} --> {self.format_ts(e, 'srt')}\n{text}\n\n")
                         if f_vtt: f_vtt.write(f"{self.format_ts(s, 'vtt')} --> {self.format_ts(e, 'vtt')}\n{text}\n\n")
                         
-                        # Format Waktu Detik Murni [02:05]
                         txt_line = f"{self.format_ts(s, 'txt')} {text}"
                         if f_txt: f_txt.write(f"{txt_line}\n")
                         
                         if self.out_docx.get() or self.out_pdf.get(): doc_lines.append(txt_line)
+                        
+                        # Tampilkan secercah log secara perlahan di konsol (Feedback visual)
+                        if i % 10 == 0: print(f"Menulis baris ke-{i}...")
 
-                    # Tutup saluran memori
                     if f_srt: f_srt.close()
                     if f_vtt: f_vtt.close()
                     if f_txt: f_txt.close()
 
                     if self.stop_flag: break
 
-                    # Pembuatan Dokumen Kompleks (O(N) Render)
                     if self.out_docx.get():
                         try:
                             doc = docx.Document()
@@ -362,6 +434,9 @@ class PlatinumTranscriberApp(ctk.CTk):
                         except Exception as e: print(f"[PDF Error] {e}")
                     
                     if self.clean_audio.get() and os.path.exists(proc_path): os.remove(proc_path)
+                    
+                    # Simpan Log ke Database Lokal
+                    save_log(name, time.time() - t_start, f"Faster-Whisper ({m_type.capitalize()})")
 
             if self.src_type.get() == "youtube" and os.path.exists("temp.mp3"): os.remove("temp.mp3")
             
