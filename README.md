@@ -1,4 +1,4 @@
-# 🏆 PLATINUM STANDARD AI TRANSCRIBER 🏆
+# 🏆 PLATINUM TRANSCRIBER AI 🏆
 *(Scroll down for the Indonesian Version / Gulir ke bawah untuk versi Bahasa Indonesia)*
 
 **Edition:** V7.0 (Faster-Whisper, SQLite Analytics & Portable FFmpeg)  
