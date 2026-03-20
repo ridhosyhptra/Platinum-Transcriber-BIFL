@@ -43,5 +43,11 @@ PlatinumConfig.json
 .env
 .env.*
 
-# Logs / DB (optional: uncomment if you don't want user DB in repo)
-# PlatinumLogs.db
+# Large binaries & local tooling (unduh sendiri / README — jangan ke repo)
+ffmpeg.exe
+ffprobe.exe
+
+# Logs / DB (jangan commit data lokal / debug)
+PlatinumLogs.db
+*.log
+debug*.log
