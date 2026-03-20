@@ -1,0 +1,25 @@
+# Lightweight CI: syntax check only (no GUI / ffmpeg in CI)
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  syntax:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile PlatinumTranscriber.py
+        run: python -m py_compile PlatinumTranscriber.py
+
+      - name: Compile Test_Interactive_Text.py (sandbox)
+        run: python -m py_compile Test_Interactive_Text.py

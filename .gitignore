@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+platinum_env/
+.venv/
+venv/
+ENV/
+
+# PyInstaller
+*.spec
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project / secrets (never commit real keys)
+PlatinumConfig.json
+*_key*.txt
+.env
+.env.*
+
+# Logs / DB (optional: uncomment if you don't want user DB in repo)
+# PlatinumLogs.db
