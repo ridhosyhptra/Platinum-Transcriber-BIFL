@@ -11,6 +11,7 @@
 | **CI (GitHub)** | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — `py_compile` on push/PR |
 | **Sandbox (optional)** | `Test_Interactive_Text.py` — experimental karaoke-style sync (not bundled in main `.exe` workflow) |
 | **Release notes (V8.0)** | [`RELEASE_NOTES_V8.0.md`](RELEASE_NOTES_V8.0.md) |
+| **Publish GitHub Release (V8)** | [`docs/GITHUB_RELEASE_V8.md`](docs/GITHUB_RELEASE_V8.md) — tag `v8.0.0`, ZIP `PlatinumTranscriber_V8.zip` |
 | **GitHub upload SOP** | [`docs/GITHUB_UPLOAD_MASTERPLAN_SOP.md`](docs/GITHUB_UPLOAD_MASTERPLAN_SOP.md) — wajib / opsional / dilarang upload |
 | **Build `.exe` (PyInstaller)** | [`docs/BUILD_EXE.md`](docs/BUILD_EXE.md) — `2_Build_Platinum.bat`, one-file bundle |
 | **Git troubleshooting** | [`docs/GIT_TROUBLESHOOTING.md`](docs/GIT_TROUBLESHOOTING.md) — push, PAT `workflow`, merge, `.gitignore` |
@@ -208,3 +209,4 @@ Jangan commit **`PlatinumConfig.json`** berisi kunci asli — gunakan `.gitignor
 | Git troubleshooting | [`docs/GIT_TROUBLESHOOTING.md`](docs/GIT_TROUBLESHOOTING.md) |
 | License | [`LICENSE`](LICENSE) |
 | CI workflow | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| GitHub Release (V8) | [`docs/GITHUB_RELEASE_V8.md`](docs/GITHUB_RELEASE_V8.md) |
