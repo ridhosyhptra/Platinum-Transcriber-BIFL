@@ -30,4 +30,3 @@ winget install Python.Python.3.12 --accept-package-agreements
 winget install Gyan.FFmpeg --accept-package-agreements
 echo INSTALASI SELESAI! KRITIKAL: Restart Laptop Anda sekarang.
 pause
-exit
